@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const loginStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
 
   .login-root {
     min-height: 100vh;
-    background: #0a0a0a;
+    background: #0b0b0b;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Poppins', sans-serif;
     position: relative;
     overflow: hidden;
   }
@@ -23,7 +23,7 @@ const loginStyles = `
     left: -20%;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(255, 80, 40, 0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 242, 234, 0.08) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -34,7 +34,7 @@ const loginStyles = `
     right: -10%;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(255, 80, 40, 0.07) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 242, 234, 0.05) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -42,9 +42,9 @@ const loginStyles = `
     width: 100%;
     max-width: 420px;
     padding: 48px 40px;
-    background: #111111;
-    border: 1px solid #1e1e1e;
-    border-radius: 4px;
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
     position: relative;
     z-index: 1;
     box-shadow: 0 32px 64px rgba(0,0,0,0.5);
@@ -57,26 +57,39 @@ const loginStyles = `
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #ff5028, #ff8c42);
-    border-radius: 4px 4px 0 0;
+    background: linear-gradient(90deg, #00f2ea, #00bfa5);
+    border-radius: 20px 20px 0 0;
+  }
+
+  .login-logo {
+    font-size: 2rem;
+    font-weight: 900;
+    margin-bottom: 2.5rem;
+    letter-spacing: -1.5px;
+    text-align: center;
+    color: #fff;
+  }
+
+  .login-logo span {
+    color: #00f2ea;
   }
 
   .login-eyebrow {
-    font-family: 'Bebas Neue', sans-serif;
     font-size: 11px;
     letter-spacing: 4px;
-    color: #ff5028;
+    color: #00f2ea;
     text-transform: uppercase;
     margin-bottom: 8px;
+    font-weight: 700;
   }
 
   .login-heading {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 52px;
+    font-size: 42px;
     color: #ffffff;
     line-height: 1;
     margin: 0 0 36px 0;
-    letter-spacing: 2px;
+    font-weight: 800;
+    letter-spacing: -1px;
   }
 
   .login-field {
@@ -87,71 +100,69 @@ const loginStyles = `
   .login-label {
     display: block;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #555;
+    color: #888;
     margin-bottom: 8px;
   }
 
   .login-input {
     width: 100%;
-    background: #1a1a1a;
+    background: #0b0b0b;
     border: 1px solid #272727;
-    border-radius: 3px;
+    border-radius: 12px;
     padding: 14px 16px;
     color: #ffffff;
-    font-family: 'DM Sans', sans-serif;
+    font-family: inherit;
     font-size: 15px;
     box-sizing: border-box;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.3s;
     outline: none;
   }
 
   .login-input::placeholder {
-    color: #3a3a3a;
+    color: #333;
   }
 
   .login-input:focus {
-    border-color: #ff5028;
-    box-shadow: 0 0 0 3px rgba(255, 80, 40, 0.08);
+    border-color: #00f2ea;
+    box-shadow: 0 0 0 3px rgba(0, 242, 234, 0.1);
   }
 
   .login-btn {
     width: 100%;
     padding: 15px;
     margin-top: 8px;
-    background: linear-gradient(135deg, #ff5028 0%, #ff8c42 100%);
+    background: #00f2ea;
     border: none;
-    border-radius: 3px;
-    color: #ffffff;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    letter-spacing: 3px;
+    border-radius: 12px;
+    color: #000;
+    font-weight: 800;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.15s;
+    transition: all 0.3s;
   }
 
   .login-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 242, 234, 0.2);
   }
 
   .login-btn:active {
     transform: translateY(0);
   }
 
+  {/* Updated footer color in Login component below */}
+  
   .login-footer {
     margin-top: 28px;
     text-align: center;
     font-size: 13px;
-    color: #444;
-  }
-
-  .login-footer span {
-    color: #ff5028;
-    font-weight: 500;
-    cursor: pointer;
+    color: #666;
   }
 
   .login-divider {
@@ -166,7 +177,7 @@ const loginStyles = `
     content: '';
     flex: 1;
     height: 1px;
-    background: #1e1e1e;
+    background: #272727;
   }
 
   .login-divider span {
@@ -178,6 +189,7 @@ const loginStyles = `
 `;
 
 const Login = () => {
+    const navigate = useNavigate();
     const [form, setForm] = useState({
         email: "",
         password: ""
@@ -190,10 +202,24 @@ const Login = () => {
     const submit = async () => {
         try {
             const res = await axios.post("http://localhost:5000/api/auth/login", form);
-            localStorage.setItem("token", res.data.token);
+            const { token, role, name } = res.data;
+            
+            localStorage.setItem("token", token);
+            localStorage.setItem("role", role);
+            localStorage.setItem("user", name);
+            
             alert("Login success");
+            if (role === 'admin') {
+                navigate('/admin-dashboard');
+            } else if (role === 'trainer') {
+                navigate('/trainer-dashboard');
+            } else if (role === 'member') {
+                navigate('/member-dashboard');
+            } else {
+                navigate('/');
+            }
         } catch (err: any) {
-            alert("Invalid credentials");
+            alert(err.response?.data?.message || "Invalid credentials");
         }
     };
 
@@ -202,6 +228,7 @@ const Login = () => {
             <style>{loginStyles}</style>
             <div className="login-root">
                 <div className="login-card">
+                    <div className="login-logo">UD<span> FITNESS STUDIO</span></div>
                     <div className="login-eyebrow">Welcome back</div>
                     <h2 className="login-heading">Login</h2>
 
@@ -234,7 +261,7 @@ const Login = () => {
 
                     {/* ✅ Updated footer link */}
                     <div className="login-footer">
-                        Don't have an account? <Link to="/register" style={{ color: "#ff5028", fontWeight: 500 }}>Create one</Link>
+                        Don't have an account? <Link to="/register" style={{ color: "#00f2ea", fontWeight: 500 }}>Create one</Link>
                     </div>
                 </div>
             </div>
