@@ -7,6 +7,7 @@ import adminRoutes from "./routes/adminRoutes";
 import trainerRoutes from "./routes/trainerRoutes";
 import memberRoutes from "./routes/memberRoutes";
 import productRoutes from "./routes/productRoutes";
+import orderRoutes from "./routes/orderRoutes";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/trainer", trainerRoutes);
 app.use("/api/member", memberRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
 
 mongoose.connect(process.env.MONGO_URI!)
     .then(() => console.log("MongoDB Connected"))

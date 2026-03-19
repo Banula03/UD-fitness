@@ -131,13 +131,15 @@ function AdminDashboard() {
 function StaffManagement() {
   const [staff, setStaff] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     phone: '',
     role: 'staff',
-    specialization: ''
+    specialization: '',
+    status: 'active'
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -168,28 +170,75 @@ function StaffManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/admin/staff', {
-        method: 'POST',
+      const url = editingId 
+        ? `http://localhost:5000/api/admin/staff/${editingId}`
+        : 'http://localhost:5000/api/admin/staff';
+      
+      const method = editingId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(formData)
       });
+
       if (response.ok) {
-        setMessage('Staff member created successfully!');
-        setFormData({ name: '', email: '', password: '', phone: '', role: 'staff', specialization: '' });
-        setShowForm(false);
+        setMessage(editingId ? 'Staff member updated successfully!' : 'Staff member created successfully!');
+        resetForm();
         fetchStaff();
         setTimeout(() => setMessage(''), 3000);
       } else {
         const data = await response.json();
-        setMessage(data.message || 'Failed to create staff member');
+        setMessage(data.message || 'Action failed');
       }
     } catch (error) {
-      console.error('Error creating staff:', error);
-      setMessage('Error creating staff member');
+      console.error('Error in staff operation:', error);
+      setMessage('An error occurred');
     }
+  };
+
+  const handleEdit = (member: any) => {
+    setEditingId(member._id);
+    setFormData({
+      name: member.name,
+      email: member.email,
+      password: '', // Don't pre-fill password
+      phone: member.phone || '',
+      role: member.role,
+      specialization: member.specialization || '',
+      status: member.status || 'active'
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this staff member?')) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/staff/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        setMessage('Staff member deleted successfully!');
+        fetchStaff();
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting staff:', error);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: '', email: '', password: '', phone: '', role: 'staff', specialization: '', status: 'active' });
+    setShowForm(false);
+    setEditingId(null);
   };
 
   if (loading) return <div className="section-loading">Loading staff...</div>;
@@ -198,7 +247,7 @@ function StaffManagement() {
     <div className="staff-section">
       <div className="section-header">
         <h2>Staff Management</h2>
-        <button className="add-btn" onClick={() => setShowForm(!showForm)}>
+        <button className="add-btn" onClick={() => showForm ? resetForm() : setShowForm(true)}>
           {showForm ? 'Cancel' : 'Add Staff Member'}
         </button>
       </div>
@@ -207,6 +256,7 @@ function StaffManagement() {
 
       {showForm && (
         <form className="admin-form" onSubmit={handleSubmit}>
+          <h3>{editingId ? 'Edit Staff Member' : 'Add New Staff Member'}</h3>
           <div className="form-grid">
             <input
               type="text"
@@ -222,13 +272,15 @@ function StaffManagement() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
+            {!editingId && (
+              <input
+                type="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+            )}
             <input
               type="tel"
               placeholder="Phone"
@@ -245,12 +297,21 @@ function StaffManagement() {
             </select>
             <input
               type="text"
-              placeholder="Specialization (e.g., Bodybuilding)"
+              placeholder="Specialization"
               value={formData.specialization}
               onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
             />
+            {editingId && (
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            )}
           </div>
-          <button type="submit" className="submit-btn">Create Staff</button>
+          <button type="submit" className="submit-btn">{editingId ? 'Update Staff' : 'Create Staff'}</button>
         </form>
       )}
 
@@ -264,6 +325,17 @@ function StaffManagement() {
               <p><span>Email:</span> {member.email}</p>
               <p><span>Role:</span> <span className="role-badge">{member.role}</span></p>
               <p><span>Phone:</span> {member.phone || 'N/A'}</p>
+              <p><span>Status:</span> <span className={`status-badge ${member.status}`}>{member.status}</span></p>
+              <div className="card-actions">
+                <button className="edit-btn" onClick={() => handleEdit(member)}>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  Edit
+                </button>
+                <button className="delete-btn" onClick={() => handleDelete(member._id)}>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -275,12 +347,14 @@ function StaffManagement() {
 function TrainerManagement() {
   const [trainers, setTrainers] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     phone: '',
-    specialization: ''
+    specialization: '',
+    status: 'active'
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -311,28 +385,74 @@ function TrainerManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/admin/trainers', {
-        method: 'POST',
+      const url = editingId 
+        ? `http://localhost:5000/api/admin/trainers/${editingId}`
+        : 'http://localhost:5000/api/admin/trainers';
+      
+      const method = editingId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ ...formData, role: 'trainer' })
       });
+
       if (response.ok) {
-        setMessage('Trainer created successfully!');
-        setFormData({ name: '', email: '', password: '', phone: '', specialization: '' });
-        setShowForm(false);
+        setMessage(editingId ? 'Trainer updated successfully!' : 'Trainer created successfully!');
+        resetForm();
         fetchTrainers();
         setTimeout(() => setMessage(''), 3000);
       } else {
         const data = await response.json();
-        setMessage(data.message || 'Failed to create trainer');
+        setMessage(data.message || 'Action failed');
       }
     } catch (error) {
-      console.error('Error creating trainer:', error);
-      setMessage('Error creating trainer');
+      console.error('Error in trainer operation:', error);
+      setMessage('An error occurred');
     }
+  };
+
+  const handleEdit = (trainer: any) => {
+    setEditingId(trainer._id);
+    setFormData({
+      name: trainer.name,
+      email: trainer.email,
+      password: '',
+      phone: trainer.phone || '',
+      specialization: trainer.specialization || '',
+      status: trainer.status || 'active'
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this trainer?')) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/trainers/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        setMessage('Trainer deleted successfully!');
+        fetchTrainers();
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting trainer:', error);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: '', email: '', password: '', phone: '', specialization: '', status: 'active' });
+    setShowForm(false);
+    setEditingId(null);
   };
 
   if (loading) return <div className="section-loading">Loading trainers...</div>;
@@ -341,7 +461,7 @@ function TrainerManagement() {
     <div className="trainers-section">
       <div className="section-header">
         <h2>Trainer Management</h2>
-        <button className="add-btn" onClick={() => setShowForm(!showForm)}>
+        <button className="add-btn" onClick={() => showForm ? resetForm() : setShowForm(true)}>
           {showForm ? 'Cancel' : 'Add Trainer'}
         </button>
       </div>
@@ -350,6 +470,7 @@ function TrainerManagement() {
 
       {showForm && (
         <form className="admin-form" onSubmit={handleSubmit}>
+          <h3>{editingId ? 'Edit Trainer' : 'Add New Trainer'}</h3>
           <div className="form-grid">
             <input
               type="text"
@@ -365,13 +486,15 @@ function TrainerManagement() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
+            {!editingId && (
+              <input
+                type="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+            )}
             <input
               type="tel"
               placeholder="Phone"
@@ -390,8 +513,17 @@ function TrainerManagement() {
               <option value="CrossFit">CrossFit</option>
               <option value="Strength">Strength Training</option>
             </select>
+            {editingId && (
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            )}
           </div>
-          <button type="submit" className="submit-btn">Create Trainer</button>
+          <button type="submit" className="submit-btn">{editingId ? 'Update Trainer' : 'Create Trainer'}</button>
         </form>
       )}
 
@@ -405,6 +537,17 @@ function TrainerManagement() {
               <p><span>Email:</span> {trainer.email}</p>
               <p><span>Specialization:</span> <span className="spec-badge">{trainer.specialization}</span></p>
               <p><span>Phone:</span> {trainer.phone || 'N/A'}</p>
+              <p><span>Status:</span> <span className={`status-badge ${trainer.status}`}>{trainer.status}</span></p>
+              <div className="card-actions">
+                <button className="edit-btn" onClick={() => handleEdit(trainer)}>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  Edit
+                </button>
+                <button className="delete-btn" onClick={() => handleDelete(trainer._id)}>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -484,7 +627,17 @@ function RevenueTracking() {
 
 function MembersManagement() {
   const [members, setMembers] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    status: 'active'
+  });
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     fetchMembers();
@@ -509,11 +662,138 @@ function MembersManagement() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const url = editingId 
+        ? `http://localhost:5000/api/admin/members/${editingId}`
+        : 'http://localhost:5000/api/admin/members';
+      
+      const method = editingId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setMessage(editingId ? 'Member updated successfully!' : 'Member created successfully!');
+        resetForm();
+        fetchMembers();
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        const data = await response.json();
+        setMessage(data.message || 'Action failed');
+      }
+    } catch (error) {
+      console.error('Error in member operation:', error);
+      setMessage('An error occurred');
+    }
+  };
+
+  const handleEdit = (member: any) => {
+    setEditingId(member._id);
+    setFormData({
+      name: member.name,
+      email: member.email,
+      password: '',
+      phone: member.phone || '',
+      status: member.status || 'active'
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this member?')) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/members/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        setMessage('Member deleted successfully!');
+        fetchMembers();
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting member:', error);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: '', email: '', password: '', phone: '', status: 'active' });
+    setShowForm(false);
+    setEditingId(null);
+  };
+
   if (loading) return <div className="section-loading">Loading members...</div>;
 
   return (
     <div className="members-section">
-      <h2>Members Management</h2>
+      <div className="section-header">
+        <h2>Members Management</h2>
+        <button className="add-btn" onClick={() => showForm ? resetForm() : setShowForm(true)}>
+          {showForm ? 'Cancel' : 'Add Member'}
+        </button>
+      </div>
+
+      {message && <div className={`message ${message.includes('successfully') ? 'success' : 'error'}`}>{message}</div>}
+
+      {showForm && (
+        <form className="admin-form" onSubmit={handleSubmit}>
+          <h3>{editingId ? 'Edit Member' : 'Add New Member'}</h3>
+          <div className="form-grid">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            {!editingId && (
+              <input
+                type="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+            )}
+            <input
+              type="tel"
+              placeholder="Phone"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+            {editingId && (
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            )}
+          </div>
+          <button type="submit" className="submit-btn">{editingId ? 'Update Member' : 'Create Member'}</button>
+        </form>
+      )}
+
       <div className="data-list">
         {members.length === 0 ? (
           <p className="no-data">No members yet</p>
@@ -525,6 +805,16 @@ function MembersManagement() {
               <p><span>Phone:</span> {member.phone || 'N/A'}</p>
               <p><span>Status:</span> <span className={`status-badge ${member.status}`}>{member.status}</span></p>
               <p><span>Joined:</span> {new Date(member.createdAt).toLocaleDateString()}</p>
+              <div className="card-actions">
+                <button className="edit-btn" onClick={() => handleEdit(member)}>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  Edit
+                </button>
+                <button className="delete-btn" onClick={() => handleDelete(member._id)}>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}

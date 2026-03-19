@@ -6,6 +6,64 @@
   font-family: 'Poppins', sans-serif;
 }
 
+/* Premium Modern Buttons */
+.card-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.edit-btn, .delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  flex: 1;
+  padding: 0.8rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+}
+
+.edit-btn {
+  background: rgba(0, 242, 234, 0.1);
+  color: var(--accent-teal);
+  border: 1px solid rgba(0, 242, 234, 0.2);
+}
+
+.edit-btn:hover {
+  background: var(--accent-teal);
+  color: #111;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 242, 234, 0.25);
+}
+
+.delete-btn {
+  background: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.2);
+}
+
+.delete-btn:hover {
+  background: #ff4757;
+  color: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(255, 71, 87, 0.25);
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
 .admin-header {
   display: flex;
   justify-content: space-between;
@@ -128,7 +186,8 @@
   margin-bottom: 4rem;
 }
 
-.admin-form input, .admin-form select {
+.admin-form input,
+.admin-form select {
   background: var(--bg-dark);
   border: 1px solid var(--glass-border);
   color: white;
@@ -139,7 +198,8 @@
   width: 100%;
 }
 
-.admin-form input:focus, .admin-form select:focus {
+.admin-form input:focus,
+.admin-form select:focus {
   border-color: var(--accent-teal);
   outline: none;
   box-shadow: 0 0 20px rgba(0, 242, 234, 0.1);
@@ -166,8 +226,8 @@
 }
 
 .section-header h2 {
-    font-size: 2rem;
-    margin-bottom: 2rem;
+  font-size: 2rem;
+  margin-bottom: 2rem;
 }
 
 .add-btn {
@@ -204,69 +264,81 @@
 }
 
 /* Badges */
-.role-badge, .spec-badge, .status-badge {
+.role-badge,
+.spec-badge,
+.status-badge {
   padding: 0.4rem 1rem;
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 700;
 }
 
-.status-badge.active { background: rgba(0, 242, 234, 0.1); color: var(--accent-teal); }
-.status-badge.inactive { background: rgba(255, 71, 87, 0.1); color: #ff4757; }
-
-.cat-amount { color: var(--accent-teal); font-weight: 800; }
-
-/* Revenue Tracking Specifics */
-.revenue-section h2 {
-    margin-bottom: 3rem;
+.status-badge.active {
+  background: rgba(0, 242, 234, 0.1);
+  color: var(--accent-teal);
 }
 
-.revenue-summary.stats-grid {
-    margin-bottom: 3rem;
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.revenue-breakdown.data-card {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.revenue-breakdown h3 {
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-    margin-bottom: 2rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.category-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.category-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.2rem 1.5rem;
-    background: var(--bg-dark);
-    border-radius: 12px;
-    border: 1px solid var(--glass-border);
-    transition: var(--transition);
-}
-
-.category-row:hover {
-    border-color: var(--accent-teal);
-    transform: translateX(10px);
-}
-
-.cat-name {
-    font-weight: 600;
-    font-size: 1.1rem;
+.status-badge.inactive {
+  background: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
 }
 
 .cat-amount {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.2rem;
+  color: var(--accent-teal);
+  font-weight: 800;
+}
+
+/* Revenue Tracking Specifics */
+.revenue-section h2 {
+  margin-bottom: 3rem;
+}
+
+.revenue-summary.stats-grid {
+  margin-bottom: 3rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.revenue-breakdown.data-card {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.revenue-breakdown h3 {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 1.5rem;
+  background: var(--bg-dark);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  transition: var(--transition);
+}
+
+.category-row:hover {
+  border-color: var(--accent-teal);
+  transform: translateX(10px);
+}
+
+.cat-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.cat-amount {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.2rem;
 }
