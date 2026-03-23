@@ -277,11 +277,11 @@
     flex-direction: column;
     text-align: center;
   }
-  
+
   .cart-item-actions {
     justify-content: center;
   }
-  
+
   .item-total {
     text-align: center;
     border-top: 1px solid var(--glass-border);

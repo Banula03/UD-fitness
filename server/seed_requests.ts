@@ -15,8 +15,8 @@ async function seed() {
     
     if (trainer && member) {
         await MemberRequest.create({
-            member_id: member._id,
-            trainer_id: trainer._id,
+            member_id: (member._id as mongoose.Types.ObjectId).toString(),
+            trainer_id: trainer._id as mongoose.Types.ObjectId,
             request_text: "Hi Trainer, what's the best time for our next session?",
             status: 'pending'
         });

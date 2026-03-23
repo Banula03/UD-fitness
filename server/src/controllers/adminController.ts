@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/User";
+import Order from "../models/Order";
 import bcrypt from "bcryptjs";
 
 // ✅ GET STATS
@@ -8,8 +9,11 @@ export const getStats = async (req: Request, res: Response) => {
         const total_members = await User.countDocuments({ role: "member" });
         const active_staff = await User.countDocuments({ role: { $in: ["staff", "trainer", "accountant"] } });
 
-        // Mocking revenue and growth for now
-        const total_revenue = 12500.50;
+        // Calculate true revenue from successful orders (Include pending for local testing without webhooks)
+        const completedOrders = await Order.find({ status: { $ne: "cancelled" } });
+        const total_revenue = completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+        
+        // Mocking growth for now
         const monthly_growth = 12.5;
 
         res.json({
@@ -76,16 +80,20 @@ export const getTrainers = async (req: Request, res: Response) => {
 // ✅ GET REVENUE
 export const getRevenue = async (req: Request, res: Response) => {
     try {
-        // Mocked revenue data as requested by the dashboard structure
+        const completedOrders = await Order.find({ status: { $ne: "cancelled" } });
+        const total_revenue = completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+        const transaction_count = completedOrders.length;
+
+        // Simulated category totals based on real revenue until product catalog expansion
         res.json({
             success: true,
             data: {
-                total_revenue: 12500.50,
-                transaction_count: 45,
+                total_revenue,
+                transaction_count,
                 category_totals: {
-                    "Memberships": 8000.00,
-                    "Personal Training": 3500.00,
-                    "Merchandise": 1000.50
+                    "Memberships": total_revenue * 0.5,
+                    "Personal Training": total_revenue * 0.3,
+                    "Merchandise": total_revenue * 0.2
                 }
             }
         });
@@ -209,5 +217,91 @@ export const getMemberById = async (req: Request, res: Response) => {
         res.json({ success: true, data: member });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching member" });
+    }
+};
+
+// ✅ GET ANALYTICS
+export const getAnalytics = async (req: Request, res: Response) => {
+    try {
+        // 1. Revenue Timeline (Last 30 Days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const revenueData = await Order.aggregate([
+            { 
+                $match: { 
+                    status: { $ne: "cancelled" },
+                    createdAt: { $gte: thirtyDaysAgo }
+                } 
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    revenue: { $sum: "$total_amount" }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        const formattedRevenue = revenueData.map(item => ({
+            date: item._id,
+            revenue: item.revenue
+        }));
+
+        // 2. Member Activity (Active vs Inactive)
+        const memberActivity = await User.aggregate([
+            { $match: { role: "member" } },
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+        
+        const formattedActivity = memberActivity.map(item => ({
+            name: item._id.charAt(0).toUpperCase() + item._id.slice(1),
+            value: item.count
+        }));
+
+        // 3. Top Selling Products
+        const topProducts = await Order.aggregate([
+            { $match: { status: { $ne: "cancelled" } } },
+            { $unwind: "$items" },
+            {
+                $group: {
+                    _id: "$items.product_id",
+                    totalSold: { $sum: "$items.quantity" }
+                }
+            },
+            { $sort: { totalSold: -1 } },
+            { $limit: 5 },
+            {
+                $lookup: {
+                    from: "products",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "productDetails"
+                }
+            },
+            { $unwind: "$productDetails" },
+            {
+                $project: {
+                    name: "$productDetails.name",
+                    sold: "$totalSold"
+                }
+            }
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                revenueTimeline: formattedRevenue,
+                memberActivity: formattedActivity,
+                topProducts
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Server error fetching analytics" });
     }
 };

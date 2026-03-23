@@ -107,10 +107,15 @@
     border: 1px solid var(--glass-border);
 }
 
-.session-form input, .session-form select, .session-form textarea,
-.plan-form select, .plan-form textarea,
-.leave-form input, .leave-form textarea,
-.feedback-form select, .feedback-form textarea {
+.session-form input,
+.session-form select,
+.session-form textarea,
+.plan-form select,
+.plan-form textarea,
+.leave-form input,
+.leave-form textarea,
+.feedback-form select,
+.feedback-form textarea {
     background: var(--surface-dark);
     border: 1px solid var(--glass-border);
     color: #fff;
@@ -121,10 +126,15 @@
     transition: var(--transition);
 }
 
-.session-form input:focus, .session-form select:focus, .session-form textarea:focus,
-.plan-form select:focus, .plan-form textarea:focus,
-.leave-form input:focus, .leave-form textarea:focus,
-.feedback-form select:focus, .feedback-form textarea:focus {
+.session-form input:focus,
+.session-form select:focus,
+.session-form textarea:focus,
+.plan-form select:focus,
+.plan-form textarea:focus,
+.leave-form input:focus,
+.leave-form textarea:focus,
+.feedback-form select:focus,
+.feedback-form textarea:focus {
     border-color: var(--accent-teal);
     outline: none;
     box-shadow: 0 0 20px rgba(0, 242, 234, 0.1);

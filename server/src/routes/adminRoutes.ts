@@ -11,13 +11,15 @@ import {
     getMembers,
     createMember,
     updateMember,
-    getMemberById
+    getMemberById,
+    getAnalytics
 } from "../controllers/adminController";
 
 const router = express.Router();
 
-// Stats
+// Stats & Analytics
 router.get("/stats", getStats);
+router.get("/analytics", getAnalytics);
 
 // Staff management
 router.get("/staff", getStaff);

@@ -19,7 +19,7 @@ export const createOrder = async (req: Request, res: Response) => {
             phone,
             payment_method,
             total_amount,
-            status: "pending"
+            status: payment_method === "COD" ? "processing" : "pending"
         });
 
         res.status(201).json({

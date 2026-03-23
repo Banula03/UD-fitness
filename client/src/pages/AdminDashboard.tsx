@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
+
+const COLORS = ['#00f2ea', '#ff4757', '#f39c12', '#2ecc71'];
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -10,13 +13,35 @@ function AdminDashboard() {
     active_staff: 0,
     monthly_growth: 12.5
   });
+  const [analytics, setAnalytics] = useState<any>({
+    revenueTimeline: [],
+    memberActivity: [],
+    topProducts: [],
+  });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchStats();
+    fetchAnalytics();
   }, []);
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/analytics', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAnalytics(data.data || analytics);
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -92,6 +117,12 @@ function AdminDashboard() {
         >
           Members
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'leave' ? 'active' : ''}`}
+          onClick={() => setActiveTab('leave')}
+        >
+          Leave Requests
+        </button>
       </div>
 
       <div className="admin-content">
@@ -116,6 +147,59 @@ function AdminDashboard() {
                 <p className="stat-value">{stats?.monthly_growth || 0}%</p>
               </div>
             </div>
+
+            <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginTop: '30px' }}>
+              
+              <div className="chart-card" style={{ background: 'var(--surface-dark)', padding: '20px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                <h3 style={{ marginBottom: '20px', color: 'var(--text-secondary)' }}>Revenue (Last 30 Days)</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={analytics.revenueTimeline}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="date" stroke="#aaa" />
+                    <YAxis stroke="#aaa" />
+                    <Tooltip contentStyle={{ backgroundColor: '#2d3436', border: '1px solid #00f2ea', color: '#fff' }} />
+                    <Line type="monotone" dataKey="revenue" stroke="#00f2ea" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 8 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="chart-card" style={{ background: 'var(--surface-dark)', padding: '20px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                <h3 style={{ marginBottom: '20px', color: 'var(--text-secondary)' }}>Member Status</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={analytics.memberActivity}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {analytics.memberActivity.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#2d3436', border: 'none', borderRadius: '5px', color: '#fff' }} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="chart-card" style={{ background: 'var(--surface-dark)', padding: '20px', borderRadius: '10px', border: '1px solid var(--glass-border)', gridColumn: '1 / -1' }}>
+                <h3 style={{ marginBottom: '20px', color: 'var(--text-secondary)' }}>Top Selling Products</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analytics.topProducts}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="name" stroke="#aaa" />
+                    <YAxis stroke="#aaa" />
+                    <Tooltip contentStyle={{ backgroundColor: '#2d3436', border: 'none', borderRadius: '5px', color: '#fff' }} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
+                    <Bar dataKey="sold" fill="#f39c12" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+            </div>
           </div>
         )}
 
@@ -123,6 +207,100 @@ function AdminDashboard() {
         {activeTab === 'trainers' && <TrainerManagement />}
         {activeTab === 'revenue' && <RevenueTracking />}
         {activeTab === 'members' && <MembersManagement />}
+        {activeTab === 'leave' && <LeaveManagement />}
+      </div>
+    </div>
+  );
+}
+
+function LeaveManagement() {
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchLeaveRequests();
+  }, []);
+
+  const fetchLeaveRequests = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/leave', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRequests(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching leave requests:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/leave/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        setMessage(`Leave request ${status} successfully!`);
+        fetchLeaveRequests();
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  if (loading) return <div className="section-loading">Loading leave requests...</div>;
+
+  return (
+    <div className="leave-section">
+      <div className="section-header">
+        <h2>Leave Requests</h2>
+      </div>
+      
+      {message && <div className="success-message" style={{marginBottom: '20px', color: 'var(--accent-teal)'}}>{message}</div>}
+
+      <div className="data-list">
+        {requests.length === 0 ? (
+          <p className="no-data">No leave requests found</p>
+        ) : (
+          requests.map((req) => (
+            <div key={req._id} className="data-card">
+              <h4>Trainer: {req.trainer_id?.name || 'Unknown User'}</h4>
+              <p><span>Dates:</span> {new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()}</p>
+              <p><span>Reason:</span> {req.reason}</p>
+              <p>
+                <span>Status:</span> 
+                <span className={`status-badge ${req.status}`} style={{
+                  color: req.status === 'approved' ? '#2ecc71' : req.status === 'declined' ? '#ff4757' : '#f39c12',
+                  fontWeight: 'bold',
+                  marginLeft: '10px',
+                  textTransform: 'uppercase'
+                }}>
+                  {req.status}
+                </span>
+              </p>
+              {req.status === 'pending' && (
+                <div className="card-actions" style={{ marginTop: '15px' }}>
+                  <button onClick={() => handleUpdateStatus(req._id, 'approved')} style={{ background: '#2ecc71', color: 'white', padding: '8px 15px', borderRadius: '5px', border: 'none', cursor: 'pointer', marginRight: '10px' }}>
+                    Approve
+                  </button>
+                  <button onClick={() => handleUpdateStatus(req._id, 'declined')} style={{ background: '#ff4757', color: 'white', padding: '8px 15px', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>
+                    Decline
+                  </button>
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -202,11 +202,12 @@ const Login = () => {
     const submit = async () => {
         try {
             const res = await axios.post("http://localhost:5000/api/auth/login", form);
-            const { token, role, name } = res.data;
+            const { token, role, name, _id } = res.data;
             
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
             localStorage.setItem("user", name);
+            localStorage.setItem("userId", _id);
             
             alert("Login success");
             if (role === 'admin') {

@@ -4,6 +4,25 @@ import { useCart } from '../context/CartContext';
 import { FaTrash, FaShoppingBag, FaArrowLeft } from 'react-icons/fa';
 import './Cart.css';
 
+const getUserId = () => {
+    const id = localStorage.getItem('userId');
+    if (id) return id;
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload).id;
+        } catch (e) {
+            console.error("JWT parsing error", e);
+        }
+    }
+    return '';
+};
+
 const Cart = () => {
   const { cart, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
   const navigate = useNavigate();
@@ -33,8 +52,12 @@ const Cart = () => {
     setError('');
 
     try {
-      const userData = JSON.parse(user);
-      const memberId = userData?._id || userData?.id;
+      const memberId = getUserId();
+      if (!memberId) {
+          setError("User identity could not be verified. Please log in again.");
+          setLoading(false);
+          return;
+      }
 
       const orderData = {
         member_id: memberId,
@@ -48,26 +71,47 @@ const Cart = () => {
         }))
       };
 
-      const response = await fetch('http://localhost:5000/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(orderData)
-      });
+      if (paymentMethod === "CARD") {
+        const response = await fetch('http://localhost:5000/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(orderData)
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        setError(data.message || "Checkout failed");
-        setLoading(false);
-        return;
+        if (!response.ok) {
+          setError(data.message || "Stripe Checkout failed");
+          setLoading(false);
+          return;
+        }
+
+        window.location.href = data.url;
+      } else {
+        const response = await fetch('http://localhost:5000/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(orderData)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.message || "Checkout failed");
+          setLoading(false);
+          return;
+        }
+
+        clearCart();
+        alert("Order placed successfully!");
+        navigate(`/`);
       }
-
-      clearCart();
-      alert("Order placed successfully!");
-      navigate(`/`); // Redirect to home or order success if implemented
 
     } catch (err) {
       console.error("Checkout error:", err);
@@ -116,8 +160,6 @@ const Cart = () => {
 
       <div className="container cart-main-container">
         <h1>Your Shopping Cart</h1>
-
-        {error && <div className="message error">{error}</div>}
 
         <div className="cart-layout">
           <div className="cart-items-list">
@@ -200,6 +242,8 @@ const Cart = () => {
                     <option value="BANK">Bank Transfer (Coming Soon)</option>
                   </select>
                 </div>
+
+                {error && <div style={{ color: '#ff4757', marginBottom: '15px', fontSize: '0.9rem', fontWeight: 'bold' }}>{error}</div>}
 
                 <button
                   className="submit-btn checkout-btn"

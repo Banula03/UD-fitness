@@ -12,6 +12,27 @@ import {
   FaCommentAlt
 } from 'react-icons/fa';
 import './MemberDashboard.css';
+import ChatBox from '../components/ChatBox';
+import { io } from 'socket.io-client';
+
+const getUserId = () => {
+  const id = localStorage.getItem('userId');
+  if (id) return id;
+  const token = localStorage.getItem('token');
+  if (token) {
+      try {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          return JSON.parse(jsonPayload).id;
+      } catch (e) {
+          console.error("JWT parsing error", e);
+      }
+  }
+  return '';
+};
 
 const MemberDashboard = () => {
   const navigate = useNavigate();
@@ -31,6 +52,30 @@ const MemberDashboard = () => {
   const [requestText, setRequestText] = useState('');
   const [selectedTrainer, setSelectedTrainer] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedChatTrainer, setSelectedChatTrainer] = useState<any>(null);
+  const [unreadCounts, setUnreadCounts] = useState<{[key:string]: number}>({});
+
+  useEffect(() => {
+    const userId = getUserId();
+    if (!userId) return;
+    const socket = io('http://localhost:5000');
+    socket.emit("join_room", userId);
+
+    socket.on("new_message_notification", (message: any) => {
+        setUnreadCounts(prev => {
+            // Ignore if we are currently chatting with this user
+            if (selectedChatTrainer?._id === message.senderId) return prev;
+            return {
+                ...prev, 
+                [message.senderId]: (prev[message.senderId] || 0) + 1
+            };
+        });
+    });
+
+    return () => {
+        socket.disconnect();
+    };
+  }, [selectedChatTrainer]);
 
   useEffect(() => {
     const userName = localStorage.getItem('user');
@@ -176,7 +221,7 @@ const MemberDashboard = () => {
         <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</button>
         <button className={activeTab === 'plans' ? 'active' : ''} onClick={() => setActiveTab('plans')}>My Plans</button>
         <button className={activeTab === 'feedback' ? 'active' : ''} onClick={() => setActiveTab('feedback')}>Feedback</button>
-        <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>My Requests</button>
+        <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>Messages</button>
       </div>
 
       <div className="dashboard-content">
@@ -263,49 +308,38 @@ const MemberDashboard = () => {
         )}
 
         {activeTab === 'requests' && (
-          <div className="requests-section">
-            <div className="dashboard-section">
-              <h2>Request a Plan</h2>
-              <form className="request-form" onSubmit={handleRequestSubmit}>
-                <div className="form-group" style={{marginBottom: '1rem'}}>
-                  <label className="info-label">Select Trainer</label>
-                  <select 
-                    value={selectedTrainer} 
-                    onChange={(e) => setSelectedTrainer(e.target.value)}
-                    required
+          <div className="requests-section" style={{ display: 'flex', gap: '20px', background: 'var(--surface-dark)', padding: '20px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+            <div className="chat-sidebar" style={{ width: '30%', borderRight: '1px solid var(--glass-border)', paddingRight: '10px' }}>
+              <h2>Trainers</h2>
+              <div className="trainers-list">
+                {trainers.map(t => (
+                  <div 
+                    key={t._id} 
+                    className={`trainer-chat-item ${selectedChatTrainer?._id === t._id ? 'active' : ''}`}
+                    onClick={() => {
+                        setSelectedChatTrainer(t);
+                        setUnreadCounts(prev => ({...prev, [t._id]: 0}));
+                    }}
+                    style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid var(--glass-border)', backgroundColor: selectedChatTrainer?._id === t._id ? 'rgba(0, 242, 234, 0.1)' : 'transparent', borderRadius: '5px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   >
-                    <option value="">-- Choose a Trainer --</option>
-                    {trainers.map(t => (
-                      <option key={t._id} value={t._id}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="info-label">Request Details</label>
-                  <textarea 
-                    placeholder="Tell your trainer what you need (e.g., 'I need a new weight loss routine')"
-                    value={requestText}
-                    onChange={(e) => setRequestText(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="action-btn-primary">Submit Request</button>
-              </form>
-            </div>
-
-            <div className="dashboard-section" style={{marginTop: '2rem'}}>
-              <h2>Request History</h2>
-              <div className="requests-history">
-                {requests.length > 0 ? requests.map(r => (
-                  <div key={r._id} className="request-card-history">
-                    <div className="request-main">
-                      <p><strong>You:</strong> {r.request_text}</p>
-                      {r.reply_text && <div className="trainer-reply"><strong>Trainer:</strong> {r.reply_text}</div>}
-                    </div>
-                    <span className={`status-badge ${r.status}`}>{r.status.toUpperCase()}</span>
+                    <strong>{t.name}</strong>
+                    {unreadCounts[t._id] > 0 && <span style={{ background: '#ff4757', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>+{unreadCounts[t._id]} new</span>}
                   </div>
-                )) : <p>No requests made yet.</p>}
+                ))}
+                {trainers.length === 0 && <p>No trainers available.</p>}
               </div>
+            </div>
+            <div className="chat-main" style={{ width: '70%' }}>
+              {selectedChatTrainer ? (
+                <ChatBox 
+                  currentUser={{ _id: getUserId(), name: localStorage.getItem('user') || 'Member' }} 
+                  contactUser={selectedChatTrainer} 
+                />
+              ) : (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-dark)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                  Select a trainer to start chatting
+                </div>
+              )}
             </div>
           </div>
         )}

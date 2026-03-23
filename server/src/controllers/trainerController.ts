@@ -61,6 +61,7 @@ export const createSession = async (req: Request, res: Response) => {
 export const getMembersCount = async (req: Request, res: Response) => {
     try {
         const count = await User.countDocuments({ role: "member" });
+
         res.json({ success: true, data: { count } });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching member count" });
@@ -120,11 +121,11 @@ export const addLeaveRequest = async (req: Request, res: Response) => {
         const trainerId = getTrainerIdFromToken(req);
         if (!trainerId) return res.status(401).json({ message: "Unauthorized" });
 
-        const { start_date, end_date, reason } = req.body;
+        const { startDate, endDate, reason } = req.body;
         const leave = await LeaveRequest.create({
             trainer_id: trainerId,
-            start_date,
-            end_date,
+            startDate,
+            endDate,
             reason
         });
 

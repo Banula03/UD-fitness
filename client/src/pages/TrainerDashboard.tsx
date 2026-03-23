@@ -1,6 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TrainerDashboard.css';
+import ChatBox from '../components/ChatBox';
+import { io } from 'socket.io-client';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
+const getUserId = () => {
+  const id = localStorage.getItem('userId');
+  if (id) return id;
+  const token = localStorage.getItem('token');
+  if (token) {
+      try {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          return JSON.parse(jsonPayload).id;
+      } catch (e) {
+          console.error("JWT parsing error", e);
+      }
+  }
+  return '';
+};
 
 function TrainerDashboard() {
   const navigate = useNavigate();
@@ -19,14 +42,38 @@ function TrainerDashboard() {
   // Form states
   const [showSessionForm, setShowSessionForm] = useState(false);
   const [sessionData, setSessionData] = useState({ member_id: '', session_date: '', session_time: '', duration: '60', type: 'personal' });
-  const [leaveData, setLeaveData] = useState({ start_date: '', end_date: '', reason: '' });
+  const [leaveData, setLeaveData] = useState({ startDate: '', endDate: '', reason: '' });
   const [planData, setPlanData] = useState({ member_id: '', plan_details: '', type: 'meal' }); // type can be 'meal' or 'workout'
   const [feedbackData, setFeedbackData] = useState({ member_id: '', content: '' });
   const [replyData, setReplyData] = useState({ requestId: '', reply_text: '' });
+  const [selectedChatMember, setSelectedChatMember] = useState<any>(null);
+  const [unreadCounts, setUnreadCounts] = useState<{[key:string]: number}>({});
 
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    const userId = getUserId();
+    if (!userId) return;
+    const socket = io('http://localhost:5000');
+    socket.emit("join_room", userId);
+
+    socket.on("new_message_notification", (message: any) => {
+        setUnreadCounts(prev => {
+            // Ignore if we are currently chatting with this user
+            if (selectedChatMember?._id === message.senderId) return prev;
+            return {
+                ...prev, 
+                [message.senderId]: (prev[message.senderId] || 0) + 1
+            };
+        });
+    });
+
+    return () => {
+        socket.disconnect();
+    };
+  }, [selectedChatMember]);
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -128,7 +175,7 @@ function TrainerDashboard() {
       if (response.ok) {
         setSuccessMsg('Leave request submitted!');
         fetchLeaves();
-        setLeaveData({ start_date: '', end_date: '', reason: '' });
+        setLeaveData({ startDate: '', endDate: '', reason: '' });
       }
     } catch (err) { setError('Failed to submit leave'); }
   };
@@ -198,7 +245,7 @@ function TrainerDashboard() {
 
       <div className="trainer-tabs">
         <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</button>
-        <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>Member Requests</button>
+        <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>Messages</button>
         <button className={activeTab === 'plans' ? 'active' : ''} onClick={() => setActiveTab('plans')}>Diet & Workout</button>
         <button className={activeTab === 'leave' ? 'active' : ''} onClick={() => setActiveTab('leave')}>Leave Requests</button>
         <button className={activeTab === 'feedback' ? 'active' : ''} onClick={() => setActiveTab('feedback')}>Feedback</button>
@@ -227,7 +274,12 @@ function TrainerDashboard() {
                       <option value="">Select Member</option>
                       {members.map(m => <option key={m._id} value={m._id}>{m.name} ({m.email})</option>)}
                     </select>
-                    <input type="date" value={sessionData.session_date} onChange={(e) => setSessionData({...sessionData, session_date: e.target.value})} required />
+                    <DatePicker 
+                      selected={sessionData.session_date ? new Date(sessionData.session_date) : null} 
+                      onChange={(date: Date | null) => setSessionData({...sessionData, session_date: date ? date.toISOString().split('T')[0] : ''})} 
+                      placeholderText="Select Session Date"
+                      required 
+                    />
                     <input type="time" value={sessionData.session_time} onChange={(e) => setSessionData({...sessionData, session_time: e.target.value})} required />
                     <select value={sessionData.duration} onChange={(e) => setSessionData({...sessionData, duration: e.target.value})}>
                       <option value="30">30 min</option><option value="60">60 min</option><option value="90">90 min</option>
@@ -251,24 +303,41 @@ function TrainerDashboard() {
         )}
 
         {activeTab === 'requests' && (
-          <div className="requests-section">
-            <h2>Member Inquiries</h2>
-            <div className="requests-list">
-              {requests.map((r: any) => (
-                <div key={r._id} className="request-card">
-                  <p><strong>From:</strong> {members.find(m => m._id === r.member_id)?.name || r.member_id}</p>
-                  <p><strong>Question:</strong> {r.request_text}</p>
-                  {r.status === 'replied' ? (
-                    <div className="reply-box"><strong>Reply:</strong> {r.reply_text}</div>
-                  ) : (
-                    <div className="reply-form">
-                      <textarea placeholder="Type your reply..." onChange={(e) => setReplyData({requestId: r._id, reply_text: e.target.value})}></textarea>
-                      <button onClick={() => handleReplySubmit(r._id)}>Send Reply</button>
+          <div className="requests-section" style={{ display: 'flex', gap: '20px', background: 'var(--surface-dark)', padding: '20px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+            <div className="chat-sidebar" style={{ width: '30%', borderRight: '1px solid var(--glass-border)', paddingRight: '10px' }}>
+              <h2>Members</h2>
+              <div className="members-list">
+                {members.map(m => (
+                  <div 
+                    key={m._id} 
+                    className={`member-chat-item ${selectedChatMember?._id === m._id ? 'active' : ''}`}
+                    onClick={() => {
+                        setSelectedChatMember(m);
+                        setUnreadCounts(prev => ({...prev, [m._id]: 0}));
+                    }}
+                    style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid var(--glass-border)', backgroundColor: selectedChatMember?._id === m._id ? 'rgba(0, 242, 234, 0.1)' : 'transparent', borderRadius: '5px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <div>
+                        <strong>{m.name}</strong>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.email}</div>
                     </div>
-                  )}
+                    {unreadCounts[m._id] > 0 && <span style={{ background: '#ff4757', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>+{unreadCounts[m._id]} new</span>}
+                  </div>
+                ))}
+                {members.length === 0 && <p>No members found.</p>}
+              </div>
+            </div>
+            <div className="chat-main" style={{ width: '70%' }}>
+              {selectedChatMember ? (
+                <ChatBox 
+                  currentUser={{ _id: getUserId(), name: localStorage.getItem('user') || 'Trainer' }} 
+                  contactUser={selectedChatMember} 
+                />
+              ) : (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-dark)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                  Select a member to start chatting
                 </div>
-              ))}
-              {requests.length === 0 && <p>No member requests found.</p>}
+              )}
             </div>
           </div>
         )}
@@ -298,8 +367,19 @@ function TrainerDashboard() {
             <h2>Leave Management</h2>
             <form className="leave-form" onSubmit={handleLeaveSubmit}>
               <div className="form-grid">
-                <input type="date" value={leaveData.start_date} onChange={(e) => setLeaveData({...leaveData, start_date: e.target.value})} required />
-                <input type="date" value={leaveData.end_date} onChange={(e) => setLeaveData({...leaveData, end_date: e.target.value})} required />
+                <DatePicker 
+                  selected={leaveData.startDate ? new Date(leaveData.startDate) : null} 
+                  onChange={(date: Date | null) => setLeaveData({...leaveData, startDate: date ? date.toISOString().split('T')[0] : ''})} 
+                  placeholderText="Select Start Date"
+                  required 
+                />
+                <DatePicker 
+                  selected={leaveData.endDate ? new Date(leaveData.endDate) : null} 
+                  onChange={(date: Date | null) => setLeaveData({...leaveData, endDate: date ? date.toISOString().split('T')[0] : ''})} 
+                  placeholderText="Select End Date"
+                  minDate={leaveData.startDate ? new Date(leaveData.startDate) : undefined}
+                  required 
+                />
               </div>
               <textarea placeholder="Reason for leave..." value={leaveData.reason} onChange={(e) => setLeaveData({...leaveData, reason: e.target.value})} required></textarea>
               <button type="submit" className="submit-btn">Apply for Leave</button>
@@ -308,7 +388,7 @@ function TrainerDashboard() {
               <h3>Previous Requests</h3>
               {leaves.map((l: any) => (
                 <div key={l._id} className="leave-card">
-                  <p><strong>Dates:</strong> {l.start_date} to {l.end_date}</p>
+                  <p><strong>Dates:</strong> {new Date(l.startDate).toLocaleDateString()} to {new Date(l.endDate).toLocaleDateString()}</p>
                   <p><strong>Reason:</strong> {l.reason}</p>
                   <span className={`status ${l.status}`}>{l.status.toUpperCase()}</span>
                 </div>
