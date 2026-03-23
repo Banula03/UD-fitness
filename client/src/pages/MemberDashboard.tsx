@@ -20,16 +20,16 @@ const getUserId = () => {
   if (id) return id;
   const token = localStorage.getItem('token');
   if (token) {
-      try {
-          const base64Url = token.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          }).join(''));
-          return JSON.parse(jsonPayload).id;
-      } catch (e) {
-          console.error("JWT parsing error", e);
-      }
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload).id;
+    } catch (e) {
+      console.error("JWT parsing error", e);
+    }
   }
   return '';
 };
@@ -46,6 +46,7 @@ const MemberDashboard = () => {
   const [workoutPlans, setWorkoutPlans] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [trainers, setTrainers] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ const MemberDashboard = () => {
   const [selectedTrainer, setSelectedTrainer] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedChatTrainer, setSelectedChatTrainer] = useState<any>(null);
-  const [unreadCounts, setUnreadCounts] = useState<{[key:string]: number}>({});
+  const [unreadCounts, setUnreadCounts] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     const userId = getUserId();
@@ -62,18 +63,18 @@ const MemberDashboard = () => {
     socket.emit("join_room", userId);
 
     socket.on("new_message_notification", (message: any) => {
-        setUnreadCounts(prev => {
-            // Ignore if we are currently chatting with this user
-            if (selectedChatTrainer?._id === message.senderId) return prev;
-            return {
-                ...prev, 
-                [message.senderId]: (prev[message.senderId] || 0) + 1
-            };
-        });
+      setUnreadCounts(prev => {
+        // Ignore if we are currently chatting with this user
+        if (selectedChatTrainer?._id === message.senderId) return prev;
+        return {
+          ...prev,
+          [message.senderId]: (prev[message.senderId] || 0) + 1
+        };
+      });
     });
 
     return () => {
-        socket.disconnect();
+      socket.disconnect();
     };
   }, [selectedChatTrainer]);
 
@@ -88,16 +89,20 @@ const MemberDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
+      const userId = getUserId();
+      if (!userId) return;
+      
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const [dashRes, mealRes, workoutRes, feedbackRes, requestRes, trainerRes] = await Promise.all([
+      const [dashRes, mealRes, workoutRes, feedbackRes, requestRes, trainerRes, ordersRes] = await Promise.all([
         fetch('http://localhost:5000/api/member/dashboard', { headers }),
         fetch('http://localhost:5000/api/member/meal-plans', { headers }),
         fetch('http://localhost:5000/api/member/workout-plans', { headers }),
         fetch('http://localhost:5000/api/member/feedback', { headers }),
         fetch('http://localhost:5000/api/member/requests', { headers }),
-        fetch('http://localhost:5000/api/member/trainers', { headers })
+        fetch('http://localhost:5000/api/member/trainers', { headers }),
+        fetch(`http://localhost:5000/api/orders/member/${userId}`, { headers })
       ]);
 
       if (dashRes.ok) {
@@ -135,6 +140,11 @@ const MemberDashboard = () => {
         setTrainers(data.data || []);
       }
 
+      if (ordersRes && ordersRes.ok) {
+        const data = await ordersRes.json();
+        setOrders(data.data || []);
+      }
+
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
     } finally {
@@ -153,9 +163,9 @@ const MemberDashboard = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           request_text: requestText,
-          trainer_id: selectedTrainer 
+          trainer_id: selectedTrainer
         })
       });
 
@@ -220,6 +230,7 @@ const MemberDashboard = () => {
       <div className="dashboard-tabs">
         <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</button>
         <button className={activeTab === 'plans' ? 'active' : ''} onClick={() => setActiveTab('plans')}>My Plans</button>
+        <button className={activeTab === 'orders' ? 'active' : ''} onClick={() => setActiveTab('orders')}>My Orders</button>
         <button className={activeTab === 'feedback' ? 'active' : ''} onClick={() => setActiveTab('feedback')}>Feedback</button>
         <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>Messages</button>
       </div>
@@ -268,28 +279,61 @@ const MemberDashboard = () => {
 
         {activeTab === 'plans' && (
           <div className="plans-section">
-             <div className="dashboard-section">
-               <h2><FaUtensils /> Meal Plans</h2>
-               <div className="plans-list">
-                 {mealPlans.length > 0 ? mealPlans.map(p => (
-                   <div key={p._id} className="plan-card">
-                     <p>{p.plan_details}</p>
-                     <small>Assigned on: {new Date(p.createdAt).toLocaleDateString()}</small>
-                   </div>
-                 )) : <p>No meal plans assigned yet.</p>}
-               </div>
-             </div>
-             <div className="dashboard-section" style={{marginTop: '2rem'}}>
-               <h2><FaDumbbell /> Workout Plans</h2>
-               <div className="plans-list">
-                 {workoutPlans.length > 0 ? workoutPlans.map(p => (
-                   <div key={p._id} className="plan-card workout">
-                     <p>{p.plan_details}</p>
-                     <small>Assigned on: {new Date(p.createdAt).toLocaleDateString()}</small>
-                   </div>
-                 )) : <p>No workout plans assigned yet.</p>}
-               </div>
-             </div>
+            <div className="dashboard-section">
+              <h2><FaUtensils /> Meal Plans</h2>
+              <div className="plans-list">
+                {mealPlans.length > 0 ? mealPlans.map(p => (
+                  <div key={p._id} className="plan-card">
+                    <p>{p.plan_details}</p>
+                    <small>Assigned on: {new Date(p.createdAt).toLocaleDateString()}</small>
+                  </div>
+                )) : <p>No meal plans assigned yet.</p>}
+              </div>
+            </div>
+            <div className="dashboard-section" style={{ marginTop: '2rem' }}>
+              <h2><FaDumbbell /> Workout Plans</h2>
+              <div className="plans-list">
+                {workoutPlans.length > 0 ? workoutPlans.map(p => (
+                  <div key={p._id} className="plan-card workout">
+                    <p>{p.plan_details}</p>
+                    <small>Assigned on: {new Date(p.createdAt).toLocaleDateString()}</small>
+                  </div>
+                )) : <p>No workout plans assigned yet.</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <div className="orders-section dashboard-section">
+            <h2><FaShoppingBag /> Order History</h2>
+            <div className="orders-list">
+              {orders.length > 0 ? orders.map(order => (
+                <div key={order._id} className="order-item-card">
+                  <div className="order-header">
+                    <div>
+                      <span className="order-id">ORDER #{order._id.slice(-6).toUpperCase()}</span>
+                      <span className="order-date">{new Date(order.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <span className={`status-badge ${order.status}`}>{order.status.toUpperCase()}</span>
+                  </div>
+                  
+                  <div className="order-items-preview">
+                    {order.items.map((item: any, idx: number) => (
+                      <div key={idx} className="order-item-line">
+                        <span>{item.product_id?.name || "Product"} x {item.quantity}</span>
+                        <span>${(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="order-footer">
+                    <span>Payment: {order.payment_method}</span>
+                    <span className="order-total">Total: ${order.total_amount.toFixed(2)}</span>
+                  </div>
+                </div>
+              )) : <p>You haven't placed any orders yet.</p>}
+            </div>
           </div>
         )}
 
@@ -313,12 +357,12 @@ const MemberDashboard = () => {
               <h2>Trainers</h2>
               <div className="trainers-list">
                 {trainers.map(t => (
-                  <div 
-                    key={t._id} 
+                  <div
+                    key={t._id}
                     className={`trainer-chat-item ${selectedChatTrainer?._id === t._id ? 'active' : ''}`}
                     onClick={() => {
-                        setSelectedChatTrainer(t);
-                        setUnreadCounts(prev => ({...prev, [t._id]: 0}));
+                      setSelectedChatTrainer(t);
+                      setUnreadCounts(prev => ({ ...prev, [t._id]: 0 }));
                     }}
                     style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid var(--glass-border)', backgroundColor: selectedChatTrainer?._id === t._id ? 'rgba(0, 242, 234, 0.1)' : 'transparent', borderRadius: '5px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   >
@@ -331,9 +375,9 @@ const MemberDashboard = () => {
             </div>
             <div className="chat-main" style={{ width: '70%' }}>
               {selectedChatTrainer ? (
-                <ChatBox 
-                  currentUser={{ _id: getUserId(), name: localStorage.getItem('user') || 'Member' }} 
-                  contactUser={selectedChatTrainer} 
+                <ChatBox
+                  currentUser={{ _id: getUserId(), name: localStorage.getItem('user') || 'Member' }}
+                  contactUser={selectedChatTrainer}
                 />
               ) : (
                 <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-dark)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>

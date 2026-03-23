@@ -30,8 +30,8 @@ const Cart = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState(localStorage.getItem('pendingAddress') || '');
+  const [phone, setPhone] = useState(localStorage.getItem('pendingPhone') || '');
   const [paymentMethod, setPaymentMethod] = useState('COD');
 
   const handleCheckout = async () => {
@@ -39,7 +39,9 @@ const Cart = () => {
     const user = localStorage.getItem('user');
 
     if (!token || !user) {
-      navigate('/login');
+      if (address) localStorage.setItem('pendingAddress', address);
+      if (phone) localStorage.setItem('pendingPhone', phone);
+      navigate('/login/member', { state: { from: '/cart' } });
       return;
     }
 
@@ -109,8 +111,10 @@ const Cart = () => {
         }
 
         clearCart();
+        localStorage.removeItem('pendingAddress');
+        localStorage.removeItem('pendingPhone');
         alert("Order placed successfully!");
-        navigate(`/`);
+        navigate(`/shop`);
       }
 
     } catch (err) {

@@ -123,6 +123,18 @@ function AdminDashboard() {
         >
           Leave Requests
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('orders')}
+        >
+          Orders
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          Settings
+        </button>
       </div>
 
       <div className="admin-content">
@@ -149,7 +161,7 @@ function AdminDashboard() {
             </div>
 
             <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginTop: '30px' }}>
-              
+
               <div className="chart-card" style={{ background: 'var(--surface-dark)', padding: '20px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
                 <h3 style={{ marginBottom: '20px', color: 'var(--text-secondary)' }}>Revenue (Last 30 Days)</h3>
                 <ResponsiveContainer width="100%" height={300}>
@@ -193,7 +205,7 @@ function AdminDashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                     <XAxis dataKey="name" stroke="#aaa" />
                     <YAxis stroke="#aaa" />
-                    <Tooltip contentStyle={{ backgroundColor: '#2d3436', border: 'none', borderRadius: '5px', color: '#fff' }} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
+                    <Tooltip contentStyle={{ backgroundColor: '#2d3436', border: 'none', borderRadius: '5px', color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                     <Bar dataKey="sold" fill="#f39c12" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -208,6 +220,8 @@ function AdminDashboard() {
         {activeTab === 'revenue' && <RevenueTracking />}
         {activeTab === 'members' && <MembersManagement />}
         {activeTab === 'leave' && <LeaveManagement />}
+        {activeTab === 'orders' && <OrderManagement />}
+        {activeTab === 'settings' && <Settings />}
       </div>
     </div>
   );
@@ -265,8 +279,8 @@ function LeaveManagement() {
       <div className="section-header">
         <h2>Leave Requests</h2>
       </div>
-      
-      {message && <div className="success-message" style={{marginBottom: '20px', color: 'var(--accent-teal)'}}>{message}</div>}
+
+      {message && <div className="success-message" style={{ marginBottom: '20px', color: 'var(--accent-teal)' }}>{message}</div>}
 
       <div className="data-list">
         {requests.length === 0 ? (
@@ -278,7 +292,7 @@ function LeaveManagement() {
               <p><span>Dates:</span> {new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()}</p>
               <p><span>Reason:</span> {req.reason}</p>
               <p>
-                <span>Status:</span> 
+                <span>Status:</span>
                 <span className={`status-badge ${req.status}`} style={{
                   color: req.status === 'approved' ? '#2ecc71' : req.status === 'declined' ? '#ff4757' : '#f39c12',
                   fontWeight: 'bold',
@@ -348,10 +362,10 @@ function StaffManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingId 
+      const url = editingId
         ? `http://localhost:5000/api/admin/staff/${editingId}`
         : 'http://localhost:5000/api/admin/staff';
-      
+
       const method = editingId ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -395,7 +409,7 @@ function StaffManagement() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this staff member?')) return;
-    
+
     try {
       const response = await fetch(`http://localhost:5000/api/admin/staff/${id}`, {
         method: 'DELETE',
@@ -506,11 +520,11 @@ function StaffManagement() {
               <p><span>Status:</span> <span className={`status-badge ${member.status}`}>{member.status}</span></p>
               <div className="card-actions">
                 <button className="edit-btn" onClick={() => handleEdit(member)}>
-                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
                   Edit
                 </button>
                 <button className="delete-btn" onClick={() => handleDelete(member._id)}>
-                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
                   Delete
                 </button>
               </div>
@@ -563,10 +577,10 @@ function TrainerManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingId 
+      const url = editingId
         ? `http://localhost:5000/api/admin/trainers/${editingId}`
         : 'http://localhost:5000/api/admin/trainers';
-      
+
       const method = editingId ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -609,7 +623,7 @@ function TrainerManagement() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this trainer?')) return;
-    
+
     try {
       const response = await fetch(`http://localhost:5000/api/admin/trainers/${id}`, {
         method: 'DELETE',
@@ -718,11 +732,11 @@ function TrainerManagement() {
               <p><span>Status:</span> <span className={`status-badge ${trainer.status}`}>{trainer.status}</span></p>
               <div className="card-actions">
                 <button className="edit-btn" onClick={() => handleEdit(trainer)}>
-                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
                   Edit
                 </button>
                 <button className="delete-btn" onClick={() => handleDelete(trainer._id)}>
-                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
                   Delete
                 </button>
               </div>
@@ -843,10 +857,10 @@ function MembersManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingId 
+      const url = editingId
         ? `http://localhost:5000/api/admin/members/${editingId}`
         : 'http://localhost:5000/api/admin/members';
-      
+
       const method = editingId ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -888,7 +902,7 @@ function MembersManagement() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this member?')) return;
-    
+
     try {
       const response = await fetch(`http://localhost:5000/api/admin/members/${id}`, {
         method: 'DELETE',
@@ -985,13 +999,224 @@ function MembersManagement() {
               <p><span>Joined:</span> {new Date(member.createdAt).toLocaleDateString()}</p>
               <div className="card-actions">
                 <button className="edit-btn" onClick={() => handleEdit(member)}>
-                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
                   Edit
                 </button>
                 <button className="delete-btn" onClick={() => handleDelete(member._id)}>
-                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  <svg className="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
                   Delete
                 </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Settings() {
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setMessage({ type: 'error', text: 'New passwords do not match' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Password changed successfully!' });
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Failed to change password' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+    }
+  };
+
+  return (
+    <div className="settings-section">
+      <div className="section-header">
+        <h2>Account Settings</h2>
+      </div>
+
+      <div className="settings-grid" style={{ maxWidth: '600px', marginTop: '20px' }}>
+        <div className="settings-card" style={{ background: 'var(--surface-dark)', padding: '30px', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
+          <h3>Change Password</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.9rem' }}>
+            Ensure your account is using a long, random password to stay secure.
+          </p>
+
+          {message.text && (
+            <div className={`message ${message.type}`} style={{ 
+              padding: '10px', 
+              borderRadius: '5px', 
+              marginBottom: '20px',
+              backgroundColor: message.type === 'success' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)',
+              color: message.type === 'success' ? '#2ecc71' : '#e74c3c',
+              border: `1px solid ${message.type === 'success' ? '#2ecc71' : '#e74c3c'}`
+            }}>
+              {message.text}
+            </div>
+          )}
+
+          <form onSubmit={handlePasswordChange} className="settings-form">
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', color: 'var(--text-primary)' }}>Current Password</label>
+              <input
+                type="password"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', color: 'var(--text-primary)' }}>New Password</label>
+              <input
+                type="password"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: '25px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', color: 'var(--text-primary)' }}>Confirm New Password</label>
+              <input
+                type="password"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                required
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="submit-btn"
+              style={{ padding: '12px 25px', width: 'auto' }}
+            >
+              {loading ? 'Updating...' : 'Update Password'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderManagement() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/orders', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        setMessage('Order status updated!');
+        fetchOrders();
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  if (loading) return <div className="section-loading">Loading orders...</div>;
+
+  return (
+    <div className="orders-management">
+      <div className="section-header">
+        <h2>Order Management</h2>
+      </div>
+
+      {message && <div className="success-message" style={{ marginBottom: '20px', color: 'var(--accent-teal)' }}>{message}</div>}
+
+      <div className="data-list">
+        {orders.length === 0 ? (
+          <p className="no-data">No orders to display.</p>
+        ) : (
+          orders.map((order) => (
+            <div key={order._id} className="data-card order-admin-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                <span className="order-id">#{order._id.slice(-6).toUpperCase()}</span>
+                <span className={`status-badge ${order.status}`}>{order.status.toUpperCase()}</span>
+              </div>
+              
+              <p><span>Member:</span> {order.member_id?.name || 'Unknown'}</p>
+              <p><span>Total:</span> <span className="cat-amount">${order.total_amount.toFixed(2)}</span></p>
+              <p><span>Method:</span> {order.payment_method}</p>
+              <p><span>Address:</span> {order.shipping_address}</p>
+
+              <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid var(--glass-border)' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Update Status</label>
+                <select 
+                  value={order.status} 
+                  onChange={(e) => updateStatus(order._id, e.target.value)}
+                  style={{ background: 'var(--bg-dark)', color: 'white', padding: '8px', borderRadius: '8px', border: '1px solid var(--glass-border)', width: '100%' }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
               </div>
             </div>
           ))

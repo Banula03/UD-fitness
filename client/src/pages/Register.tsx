@@ -254,7 +254,6 @@ const Register = () => {
                     <div className="register-field">
                         <label className="register-label">Role</label>
                         <select className="register-select" name="role" onChange={handleChange}>
-                            <option value="admin">Admin</option>
                             <option value="trainer">Trainer</option>
                             <option value="staff">Staff</option>
                             <option value="member">Member</option>

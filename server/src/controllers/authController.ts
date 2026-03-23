@@ -14,6 +14,9 @@ export const register = async (req: Request, res: Response) => {
     const { name, email, password, role } = req.body;
 
     try {
+        if (role === "admin") {
+            return res.status(403).json({ message: "Admin registration is not allowed" });
+        }
         const userExists = await User.findOne({ email });
 
         if (userExists) {
@@ -45,9 +48,15 @@ export const register = async (req: Request, res: Response) => {
 // ✅ LOGIN
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
+    console.log("Login attempt for:", email);
 
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.trim() });
+        if (!user) {
+            console.log("User not found:", email);
+        } else {
+            console.log("User found, comparing passwords...");
+        }
 
         if (user && await bcrypt.compare(password, user.password)) {
             res.json({

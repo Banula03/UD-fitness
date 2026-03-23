@@ -27,7 +27,9 @@ export const getSessions = async (req: Request, res: Response) => {
         const trainerId = getTrainerIdFromToken(req);
         if (!trainerId) return res.status(401).json({ message: "Unauthorized" });
 
-        const sessions = await Session.find({ trainer_id: trainerId }).sort({ createdAt: -1 });
+        const sessions = await Session.find({ trainer_id: trainerId })
+            .populate('member_id', 'name email phone')
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: sessions });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching sessions" });
@@ -93,7 +95,9 @@ export const getMemberRequests = async (req: Request, res: Response) => {
         const trainerId = getTrainerIdFromToken(req);
         if (!trainerId) return res.status(401).json({ message: "Unauthorized" });
 
-        const requests = await MemberRequest.find({ trainer_id: trainerId }).sort({ createdAt: -1 });
+        const requests = await MemberRequest.find({ trainer_id: trainerId })
+            .populate('member_id', 'name email')
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: requests });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching requests" });

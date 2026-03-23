@@ -11,6 +11,8 @@ const CheckoutSuccess = () => {
   useEffect(() => {
     if (sessionId) {
       clearCart();
+      localStorage.removeItem('pendingAddress');
+      localStorage.removeItem('pendingPhone');
     }
   }, [sessionId, clearCart]);
 

@@ -292,7 +292,7 @@ function TrainerDashboard() {
                 {sessions.map((s: any) => (
                   <div key={s._id} className="session-card">
                     <h4>{s.type.toUpperCase()}</h4>
-                    <p><span>Member:</span> {members.find(m => m._id === s.member_id)?.name || s.member_id}</p>
+                    <p><span>Member:</span> {s.member_id?.name || 'Unknown'}</p>
                     <p><span>Date:</span> {s.session_date} at {s.session_time}</p>
                     <span className="session-status">Scheduled</span>
                   </div>

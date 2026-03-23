@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import RoleSelect from "./pages/RoleSelect";
 import AdminDashboard from "./pages/AdminDashboard";
 import TrainerDashboard from "./pages/TrainerDashboard";
 import MemberDashboard from "./pages/MemberDashboard";
@@ -21,7 +22,8 @@ function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<RoleSelect />} />
+          <Route path="/login/:role" element={<Login />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
           <Route path="/member-dashboard" element={<MemberDashboard />} />

@@ -12,14 +12,19 @@ import {
     createMember,
     updateMember,
     getMemberById,
-    getAnalytics
+    getAnalytics,
+    changePassword
 } from "../controllers/adminController";
+import { protect } from "../middleware/authMiddleware";
 
 const router = express.Router();
+
+router.use(protect);
 
 // Stats & Analytics
 router.get("/stats", getStats);
 router.get("/analytics", getAnalytics);
+router.post("/change-password", changePassword);
 
 // Staff management
 router.get("/staff", getStaff);

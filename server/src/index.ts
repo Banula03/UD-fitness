@@ -48,12 +48,12 @@ const io = new Server(httpServer, {
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
-    
+
     socket.on("join_room", (room) => {
         socket.join(room);
         console.log(`User joined room: ${room}`);
     });
-    
+
     socket.on("send_message", async (data) => {
         try {
             // data contains: senderId, receiverId, content, room

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaDumbbell, FaShoppingCart, FaUsers, FaChartLine, FaArrowRight, FaPlay, FaCheckCircle } from 'react-icons/fa';
+import { FaDumbbell, FaShoppingCart, FaUsers, FaChartLine, FaArrowRight, FaPlay, FaCheckCircle, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 import './Home.css';
 
 const Home = () => {
@@ -33,9 +33,12 @@ const Home = () => {
             <Link to="/features" className="nav-link">Features</Link>
             <Link to="/shop" className="nav-link">Shop</Link>
             {isLoggedIn ? (
-              <Link to={getDashboardLink()} className="nav-btn-primary">My Dashboard</Link>
+              <Link to={getDashboardLink()} className="nav-btn-primary">Dashboard</Link>
             ) : (
-              <Link to="/login" className="nav-btn-primary">Register</Link>
+              <>
+                <Link to="/login" className="nav-link">Login</Link>
+                <Link to="/register" className="nav-btn-primary">Register</Link>
+              </>
             )}
           </div>
         </div>
@@ -47,8 +50,8 @@ const Home = () => {
             <h1>Complete Daily <span>workout</span> At Home</h1>
             <p>A gym is a place with a number of equipments and machines used by people to do exercises.</p>
             <div className="cta-buttons">
-              <Link to="/register" className="btn-teal">Get Started Now</Link>
-              <button className="btn-watch"><FaPlay /> Watch Our Story</button>
+              <Link to="/register" className="btn-teal"><FaUserPlus /> Join Now</Link>
+              <Link to="/login" className="btn-watch"><FaSignInAlt /> Login</Link>
             </div>
           </div>
           <div className="hero-image-container">

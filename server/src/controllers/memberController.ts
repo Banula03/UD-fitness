@@ -24,7 +24,9 @@ export const getMemberDashboardData = async (req: Request, res: Response) => {
         const memberId = getMemberIdFromToken(req);
         if (!memberId) return res.status(401).json({ message: "Unauthorized" });
 
-        const sessions = await Session.find({ member_id: memberId }).sort({ session_date: -1 });
+        const sessions = await Session.find({ member_id: memberId })
+            .populate('trainer_id', 'name')
+            .sort({ session_date: -1 });
         const mealPlansCount = await MealPlan.countDocuments({ member_id: memberId });
         const workoutPlansCount = await WorkoutPlan.countDocuments({ member_id: memberId });
         const pendingRequestsCount = await MemberRequest.countDocuments({ member_id: memberId, status: "pending" });
@@ -50,7 +52,9 @@ export const getWorkoutPlans = async (req: Request, res: Response) => {
         const memberId = getMemberIdFromToken(req);
         if (!memberId) return res.status(401).json({ message: "Unauthorized" });
 
-        const plans = await WorkoutPlan.find({ member_id: memberId }).sort({ createdAt: -1 });
+        const plans = await WorkoutPlan.find({ member_id: memberId })
+            .populate('trainer_id', 'name')
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: plans });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching workout plans" });
@@ -62,7 +66,9 @@ export const getMealPlans = async (req: Request, res: Response) => {
         const memberId = getMemberIdFromToken(req);
         if (!memberId) return res.status(401).json({ message: "Unauthorized" });
 
-        const plans = await MealPlan.find({ member_id: memberId }).sort({ createdAt: -1 });
+        const plans = await MealPlan.find({ member_id: memberId })
+            .populate('trainer_id', 'name')
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: plans });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching meal plans" });
@@ -74,7 +80,9 @@ export const getFeedback = async (req: Request, res: Response) => {
         const memberId = getMemberIdFromToken(req);
         if (!memberId) return res.status(401).json({ message: "Unauthorized" });
 
-        const feedback = await Feedback.find({ member_id: memberId }).sort({ createdAt: -1 });
+        const feedback = await Feedback.find({ member_id: memberId })
+            .populate('trainer_id', 'name')
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: feedback });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching feedback" });
@@ -86,7 +94,9 @@ export const getMemberRequests = async (req: Request, res: Response) => {
         const memberId = getMemberIdFromToken(req);
         if (!memberId) return res.status(401).json({ message: "Unauthorized" });
 
-        const requests = await MemberRequest.find({ member_id: memberId }).sort({ createdAt: -1 });
+        const requests = await MemberRequest.find({ member_id: memberId })
+            .populate('trainer_id', 'name')
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: requests });
     } catch (error) {
         res.status(500).json({ message: "Server error fetching requests" });

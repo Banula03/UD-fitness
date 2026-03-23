@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface ISession extends Document {
     trainer_id: mongoose.Types.ObjectId;
-    member_id: string; // Storing as string to match user's placeholder or can be ObjectId
+    member_id: mongoose.Types.ObjectId;
     session_date: string;
     session_time: string;
     duration: string;
@@ -13,7 +13,7 @@ export interface ISession extends Document {
 
 const SessionSchema: Schema = new Schema({
     trainer_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    member_id: { type: String, required: true },
+    member_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     session_date: { type: String, required: true },
     session_time: { type: String, required: true },
     duration: { type: String, default: "60" },
