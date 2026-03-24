@@ -12,7 +12,7 @@ export const getStats = async (req: Request, res: Response) => {
         // Calculate true revenue from successful orders (Include pending for local testing without webhooks)
         const completedOrders = await Order.find({ status: { $ne: "cancelled" } });
         const total_revenue = completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-        
+
         // Mocking growth for now
         const monthly_growth = 12.5;
 
@@ -226,13 +226,13 @@ export const getAnalytics = async (req: Request, res: Response) => {
         // 1. Revenue Timeline (Last 30 Days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
+
         const revenueData = await Order.aggregate([
-            { 
-                $match: { 
+            {
+                $match: {
                     status: { $ne: "cancelled" },
                     createdAt: { $gte: thirtyDaysAgo }
-                } 
+                }
             },
             {
                 $group: {
@@ -258,7 +258,7 @@ export const getAnalytics = async (req: Request, res: Response) => {
                 }
             }
         ]);
-        
+
         const formattedActivity = memberActivity.map(item => ({
             name: item._id.charAt(0).toUpperCase() + item._id.slice(1),
             value: item.count

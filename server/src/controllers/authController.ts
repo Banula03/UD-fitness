@@ -3,8 +3,8 @@ import User from "../models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const generateToken = (id: string) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET!, {
+const generateToken = (id: string, role: string) => {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET!, {
         expiresIn: "7d",
     });
 };
@@ -37,7 +37,7 @@ export const register = async (req: Request, res: Response) => {
             name: user.name,
             email: user.email,
             role: user.role,
-            token: generateToken(user._id.toString())
+            token: generateToken(user._id.toString(), user.role)
         });
 
     } catch (error) {
@@ -47,8 +47,8 @@ export const register = async (req: Request, res: Response) => {
 
 // ✅ LOGIN
 export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    console.log("Login attempt for:", email);
+    const { email, password, role } = req.body;
+    console.log("Login attempt for:", email, "Expected Role:", role);
 
     try {
         const user = await User.findOne({ email: email.trim() });
@@ -58,13 +58,22 @@ export const login = async (req: Request, res: Response) => {
             console.log("User found, comparing passwords...");
         }
 
-        if (user && await bcrypt.compare(password, user.password)) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (user && isMatch) {
+            // Verify role if provided (restricted login)
+            if (role && user.role !== role) {
+                console.log(`Role mismatch: User is ${user.role}, but tried to login as ${role}`);
+                return res.status(403).json({
+                    message: `This account is registered as a ${user.role}. Please use the correct login form.`
+                });
+            }
+
             res.json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: generateToken(user._id.toString())
+                token: generateToken(user._id.toString(), user.role)
             });
         } else {
             res.status(401).json({ message: "Invalid credentials" });

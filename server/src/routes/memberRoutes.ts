@@ -9,7 +9,12 @@ import {
     getAllTrainers
 } from "../controllers/memberController";
 
+import { protect, authorize } from "../middleware/authMiddleware";
+
 const router = express.Router();
+
+router.use(protect);
+router.use(authorize(["member"]));
 
 router.get("/dashboard", getMemberDashboardData);
 router.get("/workout-plans", getWorkoutPlans);

@@ -264,7 +264,8 @@ const Login = () => {
         try {
             const loginData = {
                 email: form.email.trim(),
-                password: form.password
+                password: form.password,
+                role: role // role from useParams
             };
             const res = await axios.post("http://localhost:5000/api/auth/login", loginData);
             const { token, role: userRole, name, _id } = res.data;

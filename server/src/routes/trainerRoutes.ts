@@ -13,7 +13,12 @@ import {
     getAllMembers 
 } from "../controllers/trainerController";
 
+import { protect, authorize } from "../middleware/authMiddleware";
+
 const router = express.Router();
+
+router.use(protect);
+router.use(authorize(["trainer"]));
 
 router.get("/sessions", getSessions);
 router.post("/sessions", createSession);

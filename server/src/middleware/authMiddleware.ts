@@ -8,22 +8,34 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
         try {
             token = req.headers.authorization.split(" ")[1];
             const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-            (req as any).user = decoded;
+            
+            // Attach user id and role to request
+            (req as any).user = {
+                id: decoded.id,
+                role: decoded.role
+            };
+            
             next();
         } catch (error) {
-            res.status(401).json({ message: "Not authorized, token failed" });
+            return res.status(401).json({ message: "Not authorized, token failed" });
         }
     }
 
     if (!token) {
-        res.status(401).json({ message: "Not authorized, no token" });
+        return res.status(401).json({ message: "Not authorized, no token" });
     }
 };
 
-export const adminOnly = (req: Request, res: Response, next: NextFunction) => {
-    // This assumes the token payload includes role, if not we might need to fetch user from DB
-    // For now, let's just use 'protect' and check role in controller if needed, 
-    // or decode it here if we put it in the token.
-    // Looking at authController.ts, we only put 'id' in the token.
-    next(); 
+export const authorize = (roles: string[]) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const user = (req as any).user;
+        
+        if (!user || !roles.includes(user.role)) {
+            return res.status(403).json({ 
+                message: `Role (${user?.role || 'unknown'}) is not authorized to access this route` 
+            });
+        }
+        
+        next();
+    };
 };

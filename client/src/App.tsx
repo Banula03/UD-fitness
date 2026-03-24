@@ -12,6 +12,7 @@ import Cart from "./pages/Cart";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
 import { CartProvider } from "./context/CartContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -24,9 +25,32 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<RoleSelect />} />
           <Route path="/login/:role" element={<Login />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
-          <Route path="/member-dashboard" element={<MemberDashboard />} />
+          
+          <Route 
+            path="/admin-dashboard" 
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/trainer-dashboard" 
+            element={
+              <ProtectedRoute allowedRoles={["trainer"]}>
+                <TrainerDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/member-dashboard" 
+            element={
+              <ProtectedRoute allowedRoles={["member"]}>
+                <MemberDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
           <Route path="/checkout-success" element={<CheckoutSuccess />} />
           <Route path="/checkout-cancel" element={<CheckoutCancel />} />
         </Routes>

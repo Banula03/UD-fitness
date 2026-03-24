@@ -15,11 +15,12 @@ import {
     getAnalytics,
     changePassword
 } from "../controllers/adminController";
-import { protect } from "../middleware/authMiddleware";
+import { protect, authorize } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
 router.use(protect);
+router.use(authorize(["admin"]));
 
 // Stats & Analytics
 router.get("/stats", getStats);
