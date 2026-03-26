@@ -1074,9 +1074,9 @@ function Settings() {
           </p>
 
           {message.text && (
-            <div className={`message ${message.type}`} style={{ 
-              padding: '10px', 
-              borderRadius: '5px', 
+            <div className={`message ${message.type}`} style={{
+              padding: '10px',
+              borderRadius: '5px',
               marginBottom: '20px',
               backgroundColor: message.type === 'success' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)',
               color: message.type === 'success' ? '#2ecc71' : '#e74c3c',
@@ -1117,8 +1117,8 @@ function Settings() {
                 required
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="submit-btn"
               style={{ padding: '12px 25px', width: 'auto' }}
@@ -1198,7 +1198,7 @@ function OrderManagement() {
                 <span className="order-id">#{order._id.slice(-6).toUpperCase()}</span>
                 <span className={`status-badge ${order.status}`}>{order.status.toUpperCase()}</span>
               </div>
-              
+
               <p><span>Member:</span> {order.member_id?.name || 'Unknown'}</p>
               <p><span>Total:</span> <span className="cat-amount">${order.total_amount.toFixed(2)}</span></p>
               <p><span>Method:</span> {order.payment_method}</p>
@@ -1206,8 +1206,8 @@ function OrderManagement() {
 
               <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid var(--glass-border)' }}>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Update Status</label>
-                <select 
-                  value={order.status} 
+                <select
+                  value={order.status}
                   onChange={(e) => updateStatus(order._id, e.target.value)}
                   style={{ background: 'var(--bg-dark)', color: 'white', padding: '8px', borderRadius: '8px', border: '1px solid var(--glass-border)', width: '100%' }}
                 >

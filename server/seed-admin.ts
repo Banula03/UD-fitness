@@ -37,3 +37,4 @@ async function seedAdmin() {
 }
 
 seedAdmin();
+//admin12345
